@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NVDA — Full Investment Analysis · Signals Only</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.0/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+:root{
+  --bg:#07090d;--surface:#0e1219;--surface2:#141c26;--surface3:#1b2536;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --text:#dde4ef;--text2:#7d90a8;--text3:#4a5e72;
+  --green:#1fd88a;--red:#f0495a;--yellow:#f5c842;--blue:#3b9eff;--purple:#9d6fff;--orange:#ff7a45;
+  --font-display:'Playfair Display',Georgia,serif;
+  --font-body:'Syne',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;opacity:0.025;
+background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(7,9,13,0.95);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 32px;}
+.nav-brand{display:flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#ffffff;margin-right:28px;white-space:nowrap;}
+.nav-brand img{width:22px;height:22px;object-fit:contain;opacity:0.88;}
+.nav-links{display:flex;flex:1;overflow-x:auto;scrollbar-width:none;}
+.nav-links::-webkit-scrollbar{display:none;}
+.nav-link{display:block;padding:0 13px;height:52px;line-height:52px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;position:relative;top:1px;transition:color 0.2s,border-color 0.2s;}
+.nav-link:hover,.nav-link.active{color:var(--text);border-bottom-color:var(--green);}
+.nav-ticker{font-family:var(--font-mono);font-size:12px;font-weight:600;margin-left:auto;padding-left:16px;white-space:nowrap;}
+
+/* HERO */
+.hero{position:relative;min-height:92vh;display:grid;grid-template-rows:1fr auto;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 90% 70% at 110% -10%,rgba(31,216,138,0.07) 0%,transparent 55%),radial-gradient(ellipse 60% 60% at -10% 110%,rgba(59,158,255,0.05) 0%,transparent 55%),linear-gradient(170deg,var(--bg) 0%,#0a1018 100%);}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);background-size:80px 80px;}
+.hero-main{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:flex-end;padding:100px 64px 56px;}
+.hero-eyebrow{font-family:var(--font-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--green);margin-bottom:20px;display:flex;align-items:center;gap:14px;}
+.hero-eyebrow::before{content:'';display:block;width:28px;height:1px;background:var(--green);}
+h1.hero-title{font-family:var(--font-display);font-size:clamp(60px,8.5vw,122px);line-height:0.92;letter-spacing:-0.03em;font-weight:900;}
+h1.hero-title .it{font-style:italic;color:var(--green);}
+.hero-desc{font-size:16px;color:var(--text2);font-weight:400;max-width:500px;margin:22px 0 48px;line-height:1.65;}
+.hero-strip{position:relative;z-index:1;display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--border);}
+.hm{padding:18px 22px;border-right:1px solid var(--border);}
+.hm:last-child{border-right:none;}
+.hm-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);margin-bottom:7px;}
+.hm-val{font-size:22px;font-weight:700;line-height:1;font-family:var(--font-mono);}
+.hm-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+
+/* LAYOUT */
+.page{max-width:1260px;margin:0 auto;padding:0 48px;}
+.divider{border:none;border-top:1px solid var(--border);}
+
+/* SECTION HEADERS */
+.sh{padding:84px 0 40px;}
+.sh-ey{font-family:var(--font-mono);font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.sh-ey::before{content:'';display:block;width:18px;height:1px;background:var(--green);}
+.sh-title{font-family:var(--font-display);font-size:clamp(34px,4.2vw,56px);line-height:1.04;letter-spacing:-0.02em;}
+.sh-desc{font-size:15px;color:var(--text2);margin-top:13px;max-width:580px;line-height:1.65;}
+
+/* METRIC CELLS */
+.mcells{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:40px;}
+.mc{background:var(--surface2);border:1px solid var(--border);padding:24px 20px;position:relative;overflow:hidden;transition:border-color 0.25s;}
+.mc:hover{border-color:var(--border2);}
+.mc-dim{font-family:var(--font-mono);font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);margin-bottom:11px;}
+.mc-val{font-size:28px;font-weight:700;line-height:1;margin-bottom:7px;font-family:var(--font-mono);}
+.mc-sub{font-size:12px;color:var(--text2);}
+.mc-sub2{font-size:10px;color:var(--text3);margin-top:3px;}
+.mc-bar{position:absolute;bottom:0;left:0;right:0;height:2px;}
+
+/* PRICE SPECTRUM */
+.sp-wrap{margin:0 0 40px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:32px 38px;}
+.sp-title{font-family:var(--font-mono);font-size:10px;letter-spacing:0.13em;text-transform:uppercase;color:var(--text3);margin-bottom:28px;}
+.sp-track{position:relative;height:10px;border-radius:5px;margin:68px 0 88px;background:linear-gradient(90deg,rgba(31,216,138,0.45) 0%,rgba(245,200,66,0.35) 30%,rgba(255,122,69,0.4) 60%,rgba(240,73,90,0.55) 100%);}
+.sp-pin{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;}
+.sp-dot{border-radius:50%;border:2px solid var(--bg);z-index:2;}
+.sp-line{width:1px;margin-bottom:2px;}
+.sp-above{position:absolute;bottom:calc(100% + 28px);transform:translateX(-50%);text-align:center;white-space:nowrap;}
+.sp-below{position:absolute;top:calc(100% + 20px);transform:translateX(-50%);text-align:center;white-space:nowrap;}
+.sp-val{font-family:var(--font-mono);font-size:12px;font-weight:600;}
+.sp-desc{font-size:10px;color:var(--text3);margin-top:2px;}
+.sp-callout{display:flex;align-items:flex-start;gap:18px;padding:14px 18px;background:rgba(240,73,90,0.05);border:1px solid rgba(240,73,90,0.18);border-radius:8px;}
+.sp-callout-num{font-family:var(--font-mono);font-size:26px;font-weight:700;color:var(--red);line-height:1;white-space:nowrap;}
+.sp-callout-text{font-size:13px;color:var(--text2);line-height:1.6;}
+.sp-mobile{display:none;}
+@media(max-width:480px){
+  .sp-track{display:none;}
+  .sp-mobile{display:block;}
+  .sp-mobile-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .sp-mobile-row:last-child{border-bottom:none;}
+  .sp-mobile-label{color:var(--text2);font-size:12px;}
+  .sp-mobile-val{font-family:var(--font-mono);font-weight:700;}
+}
+
+/* CARDS */
+.card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:24px;}
+.ct{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:16px;padding-bottom:11px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+
+/* STAT GRID */
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:2px;margin:22px 0;}
+.s{background:var(--surface3);border:1px solid var(--border);padding:17px;}
+.sl{font-family:var(--font-mono);font-size:9px;letter-spacing:0.13em;text-transform:uppercase;color:var(--text3);margin-bottom:7px;}
+.sv{font-size:19px;font-weight:700;line-height:1;}
+.ss{font-size:10px;color:var(--text3);margin-top:4px;}
+
+/* FLAGS */
+.flags{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin:22px 0;}
+.flag{padding:17px;border-radius:8px;border-left:3px solid;}
+.fr{background:rgba(240,73,90,0.05);border-color:var(--red);}
+.fy{background:rgba(245,200,66,0.05);border-color:var(--yellow);}
+.fg{background:rgba(31,216,138,0.05);border-color:var(--green);}
+.fh{font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:9px;}
+.fh.r{color:var(--red);} .fh.y{color:var(--yellow);} .fh.g{color:var(--green);}
+.fi{font-size:12px;color:var(--text2);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);line-height:1.45;}
+.fi:last-child{border-bottom:none;}
+
+/* TABLE */
+.tw{overflow-x:auto;margin:16px 0;}
+table.t{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--font-mono);}
+table.t th{background:var(--surface3);color:var(--text3);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:9px 12px;text-align:right;border-bottom:1px solid var(--border2);white-space:nowrap;}
+table.t th:first-child{text-align:left;}
+table.t td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap;}
+table.t td:first-child{text-align:left;color:var(--text);}
+table.t tr:hover td{background:rgba(255,255,255,0.015);}
+.tg{color:var(--green)!important;} .tr{color:var(--red)!important;}
+.ty{color:var(--yellow)!important;} .tb{color:var(--blue)!important;} .tp{color:var(--purple)!important;}
+
+/* COLLAPSIBLE */
+.cb{display:inline-flex;align-items:center;gap:7px;background:var(--surface3);border:1px solid var(--border);color:var(--green);font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:8px 13px;border-radius:5px;cursor:pointer;transition:all 0.2s;margin:9px 0;}
+.cb:hover{border-color:var(--green);background:rgba(31,216,138,0.05);}
+.cb .arr{transition:transform 0.25s;}
+.cb.open .arr{transform:rotate(90deg);}
+.cbody{max-height:0;overflow:hidden;transition:max-height 0.4s ease;}
+.cbody.open{max-height:6000px;}
+
+/* CHART */
+.ch{background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:22px;margin:17px 0;}
+.chl{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:13px;}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:17px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;font-family:var(--font-mono);}
+.bg{background:rgba(31,216,138,0.12);color:var(--green);}
+.br{background:rgba(240,73,90,0.12);color:var(--red);}
+.by{background:rgba(245,200,66,0.12);color:var(--yellow);}
+.bb{background:rgba(59,158,255,0.12);color:var(--blue);}
+.bp{background:rgba(157,111,255,0.12);color:var(--purple);}
+
+/* METRIC ROWS */
+.mr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.mr:last-child{border-bottom:none;}
+.mr .l{color:var(--text2);} .mr .v{font-weight:600;color:var(--text);font-family:var(--font-mono);}
+.mr-tot{display:flex;justify-content:space-between;align-items:center;padding:10px 0 3px;border-top:1px solid var(--green);font-size:14px;font-weight:700;}
+
+/* COMP BARS */
+.crow{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--border);}
+.cname{font-size:12px;color:var(--text2);min-width:170px;}
+.ctrack{flex:1;height:20px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;}
+.cfill{height:100%;border-radius:3px;}
+.cval{font-family:var(--font-mono);font-weight:600;font-size:13px;min-width:65px;text-align:right;}
+
+/* FOOTNOTE */
+.fn{background:var(--surface3);border-left:2px solid var(--border2);padding:10px 13px;border-radius:0 5px 5px 0;font-size:11px;color:var(--text3);line-height:1.65;margin:13px 0;}
+
+/* ONE QUESTION */
+.oq{background:linear-gradient(135deg,rgba(31,216,138,0.06),rgba(59,158,255,0.04));border:1px solid var(--border2);border-radius:12px;padding:36px;margin:20px 0;text-align:center;}
+.oq-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;}
+.oq-q{font-family:var(--font-display);font-size:clamp(22px,3vw,36px);line-height:1.2;color:var(--text);margin-bottom:18px;}
+.oq-split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;}
+.oq-side{padding:20px;border-radius:8px;}
+.oq-side-label{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;}
+.oq-side-text{font-size:13px;color:var(--text2);line-height:1.6;}
+
+/* GDP */
+.gdp-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:16px 0;}
+.gdp-c{background:var(--surface3);border:1px solid var(--border);padding:16px 13px;text-align:center;border-top:3px solid;}
+.gdp-scenario{font-size:10px;color:var(--text3);margin-bottom:6px;font-family:var(--font-mono);}
+.gdp-mktcap{font-size:11px;color:var(--text2);margin-bottom:5px;}
+.gdp-change{font-family:var(--font-mono);font-size:16px;font-weight:700;margin-bottom:4px;}
+.gdp-country{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.gdp-plain{font-size:11px;color:var(--text3);line-height:1.4;font-style:italic;}
+
+/* RISK */
+.risk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:22px 0;}
+.rc{background:var(--surface2);border:1px solid var(--border);padding:22px;border-top:3px solid;}
+.rc-layer{font-family:var(--font-mono);font-size:8px;letter-spacing:0.16em;text-transform:uppercase;margin-bottom:10px;}
+.rc-verdict{font-size:20px;font-weight:700;margin-bottom:10px;font-family:var(--font-mono);}
+.rc-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;}
+.rc-ev{padding-top:11px;border-top:1px solid var(--border);}
+.rc-ev-item{font-size:11px;color:var(--text3);padding:3px 0;display:flex;gap:7px;line-height:1.4;}
+.rc-ev-item::before{content:'→';color:var(--green);flex-shrink:0;}
+
+/* PEG */
+.peg-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:16px 0;}
+.peg-c{background:var(--surface3);border:1px solid var(--border);padding:16px;text-align:center;}
+.peg-company{font-size:11px;font-family:var(--font-mono);color:var(--text3);margin-bottom:8px;letter-spacing:0.1em;text-transform:uppercase;}
+.peg-pe{font-size:22px;font-weight:700;font-family:var(--font-mono);margin-bottom:4px;}
+.peg-growth{font-size:11px;color:var(--text2);margin-bottom:4px;}
+.peg-peg{font-size:13px;font-family:var(--font-mono);font-weight:700;}
+
+/* SUMMARY */
+.sum-card{background:linear-gradient(135deg,var(--surface2),var(--surface3));border:1px solid var(--border2);border-radius:12px;padding:38px;margin-bottom:26px;}
+.sum-text{font-size:15px;color:var(--text2);line-height:1.85;}
+.sum-text strong{color:var(--text);font-weight:600;}
+
+/* COUNTDOWN */
+.cd{background:linear-gradient(90deg,rgba(245,200,66,0.07),rgba(245,200,66,0.02));border:1px solid rgba(245,200,66,0.2);border-radius:8px;padding:13px 18px;display:flex;align-items:flex-start;gap:14px;margin:18px 0;}
+.cd-icon{font-size:17px;flex-shrink:0;margin-top:2px;}
+.cd-text{font-size:12px;color:var(--text2);line-height:1.6;}
+.cd-date{font-family:var(--font-mono);font-weight:700;color:var(--yellow);}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity 0.55s ease,transform 0.55s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:44px;text-align:center;margin-top:88px;}
+.fb{font-family:var(--font-display);font-size:20px;color:#ffffff;margin-bottom:12px;font-style:italic;display:flex;align-items:center;justify-content:center;gap:12px;}
+.fb img{width:44px;height:44px;object-fit:contain;opacity:0.8;}
+.fm{font-family:var(--font-mono);font-size:10px;color:var(--text3);line-height:2.2;}
+.fd{font-size:11px;color:var(--text3);max-width:720px;margin:16px auto 0;line-height:1.75;}
+
+/* RESPONSIVE */
+@media(max-width:960px){
+  .hero-main{padding:60px 22px 36px;}
+  .hero-strip{grid-template-columns:repeat(3,1fr);}
+  .page{padding:0 18px;}
+  nav{padding:0 18px;}
+  .nav-links{display:none;}
+  .g2,.g3,.g4{grid-template-columns:1fr;}
+  .flags{grid-template-columns:1fr;}
+  .mcells{grid-template-columns:repeat(2,1fr);}
+  .gdp-grid{grid-template-columns:repeat(2,1fr);}
+  .risk-grid{grid-template-columns:1fr 1fr;}
+  .peg-grid{grid-template-columns:repeat(3,1fr);}
+  .oq-split{grid-template-columns:1fr;}
+}
+@media(max-width:480px){
+  .hero-strip{grid-template-columns:repeat(2,1fr);}
+  .mcells{grid-template-columns:1fr;}
+  .risk-grid{grid-template-columns:1fr;}
+  .peg-grid{grid-template-columns:repeat(2,1fr);}
+  body{font-size:14px;}
+}
+</style>
+
+<body>
+<!-- NAV - logo injected by build script -->
+<nav id="main-nav">
+  <div class="nav-brand"><span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;margin-right:0;flex-shrink:0;"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/2wBDAQICAgICAgUDAwUKBwYHCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgr/wAARCAAYABgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9PtM0O1s7NYbSzjLDGSGxjg84qpd6XosvjIWLRE3KWcc5VJsEJ5jhcgHkZyKybyP4/vbanJodz4VEvkBrFbuG5G04bqVP+6frXg1k/wC3Zpv7YGuarqmq+CZNO/4QS0eCF4Lvy223cx8lcchiSQzf3SDjtXLbQ67n09rOi6fe2PkXlrGWcHZyKK8y1m1/aunh0K4ub3wdK8F0r6qLCK5UtEEIKqXbGWbBz2HGDRSGehaF4z07VbJHjuwpeMAHj0rOj1RI/iBNezWbFDp6QrcgLgnzHO314z9OaKKQE+ueKLC3t5DBfgYU7vlzg9TRRRQB/9k=" style="width:22px;height:22px;object-fit:cover;opacity:0.9;" alt="SO"></span>Signals Only · NVDA</div>
+  <div class="nav-links">
+    <a class="nav-link" href="#paradox">The Paradox</a>
+    <a class="nav-link" href="#business">The Business</a>
+    <a class="nav-link" href="#ownership">True Ownership</a>
+    <a class="nav-link" href="#returns">Expected Returns</a>
+    <a class="nav-link" href="#price">The Price</a>
+    <a class="nav-link" href="#risk">Risk Landscape</a>
+    <a class="nav-link" href="#summary">Full Picture</a>
+  </div>
+  <div class="nav-ticker" style="color:var(--yellow)">NVDA $200.00 ▼</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg"></div><div class="hero-grid"></div>
+  <div class="hero-main">
+    <div class="hero-eyebrow">Signals Only · NVIDIA Deep Dive · Sources: FY2022–FY2026 SEC Filings</div>
+    <h1 class="hero-title">NVIDIA<br><span class="it">Corporation</span></h1>
+    <p class="hero-desc">A multi-phase fundamental analysis built entirely from verified filing data. Not a recommendation. A framework for thinking.</p>
+  </div>
+  <div class="hero-strip">
+    <div class="hm"><div class="hm-label">Current Price</div><div class="hm-val" style="color:var(--yellow)">$200.00</div><div class="hm-sub">May 2, 2026</div></div>
+    <div class="hm"><div class="hm-label">Primary Fair Value</div><div class="hm-val" style="color:var(--green)">$63.79</div><div class="hm-sub">20x Owners' EPS · filing-based</div></div>
+    <div class="hm"><div class="hm-label">Price / Fair Value</div><div class="hm-val" style="color:var(--red)">3.14x</div><div class="hm-sub">At current price</div></div>
+    <div class="hm"><div class="hm-label">Expected Return</div><div class="hm-val" style="color:var(--green)">+14.70%</div><div class="hm-sub">Annual · current price</div></div>
+    <div class="hm"><div class="hm-label">Next Earnings</div><div class="hm-val" style="color:var(--yellow)">May 20</div><div class="hm-sub">Q1 FY27 · Est. $1.74 EPS</div></div>
+  </div>
+</section>
+
+<!-- ═══ THE PARADOX ═══ -->
+<div class="page" id="paradox">
+  <div class="sh reveal">
+    <div class="sh-ey">The Opening Question</div>
+    <h2 class="sh-title">The year NVIDIA's business was <em style="font-style:italic;color:var(--green)">weakest</em>,<br>investors made 200%.</h2>
+    <p class="sh-desc">Understanding how that happened — and whether the inverse is now playing out — is the entire NVIDIA investment question in one sentence.</p>
+  </div>
+  <div class="cd reveal">
+    <div class="cd-icon">📅</div>
+    <div class="cd-text">NVIDIA reports Q1 FY2027 on <span class="cd-date">May 20, 2026</span>. Consensus EPS estimate: $1.74 GAAP. This analysis is built on FY2026 10-K data. The May 20 report will be the first read on whether the competitive dynamics described here are showing up in the numbers.</div>
+  </div>
+  <div class="ch reveal">
+    <div class="chl">ROIC (Business) vs Total Investor Return — Year by Year · Left axis: ROIC % · Right axis: Stock Return %</div>
+    <div style="position:relative;height:320px;"><canvas id="paradoxChart"></canvas></div>
+  </div>
+  <div class="g2 reveal" style="margin:18px 0;">
+    <div class="card">
+      <div class="ct">The Divergence — What Actually Happened</div>
+      <div class="tw"><table class="t">
+        <thead><tr><th>Fiscal Year</th><th>ROIC</th><th>Stock Return</th><th>S&P 500</th><th>What Drove It</th></tr></thead>
+        <tbody>
+          <tr><td>FY2022</td><td class="tg">26%</td><td class="tg">+76%</td><td>+21%</td><td style="font-size:11px;color:var(--text3)">Multiple expansion ahead of fundamentals</td></tr>
+          <tr><td>FY2023</td><td class="ty">11%</td><td class="tr">−11%</td><td class="tr">−7%</td><td style="font-size:11px;color:var(--text3)">Gaming/crypto hangover · sentiment collapse</td></tr>
+          <tr><td style="color:var(--yellow);font-weight:700">FY2024</td><td class="tr">11%</td><td class="tg">+200%</td><td>+22%</td><td style="font-size:11px;color:var(--yellow)">AI inflection priced in before ROIC reflected it</td></tr>
+          <tr><td>FY2025</td><td class="tg">84%</td><td class="tg">+134%</td><td>+27%</td><td style="font-size:11px;color:var(--text3)">Business caught up to market pricing</td></tr>
+          <tr><td>FY2026</td><td class="tg">68%</td><td class="ty">+32%</td><td>+15%</td><td style="font-size:11px;color:var(--text3)">Multiple beginning to compress</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="ct">The Mechanism — Why They Diverge</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.75;">
+        <p style="margin-bottom:12px;">ROIC measures what the <strong style="color:var(--text)">business earns</strong>. Stock return measures what <strong style="color:var(--text)">shareholders capture</strong>. The gap is entirely driven by <strong style="color:var(--green)">P/E multiple expansion or compression</strong>.</p>
+        <p style="margin-bottom:12px;">In FY2024, ROIC was only 11% but the stock returned 200% because the market repriced <em>future</em> ROIC expectations 18 months before the numbers arrived. That was correct, and extraordinarily profitable.</p>
+        <p style="margin-bottom:12px;">That mechanism is now running in partial reverse. The business delivers exceptional ROIC. But the multiple borrowed from the future is slowly being repaid.</p>
+        <p><strong style="color:var(--text)">The forward question:</strong> can business growth outpace the multiple compression? That depends entirely on what kind of company NVIDIA becomes.</p>
+      </div>
+    </div>
+  </div>
+  <hr class="divider" style="margin-top:56px;">
+</div>
+
+<!-- ═══ THE BUSINESS ═══ -->
+<div class="page" id="business">
+  <div class="sh reveal">
+    <div class="sh-ey">Business Quality</div>
+    <h2 class="sh-title">An exceptional business<br>by every measure.</h2>
+    <p class="sh-desc">Margins, capital efficiency, and value creation.</p>
+  </div>
+  <div class="reveal" style="margin-bottom:6px;"><div class="sh-ey" style="padding:0;margin:0 0 8px;"><span style="display:block;width:14px;height:1px;background:var(--green)"></span>2A · Margins &amp; Cash Flow</div></div>
+  <div class="mcells reveal">
+    <div class="mc"><div class="mc-dim">FCF Margin</div><div class="mc-val tg">44.6%</div><div class="mc-sub">FY2026 full year</div><div class="mc-sub2">Benchmark &gt;10% · OCF $102.7B</div><div class="mc-bar" style="background:var(--green)"></div></div>
+    <div class="mc"><div class="mc-dim">Gross Margin</div><div class="mc-val tg">71.1%</div><div class="mc-sub">FY2026 full year</div><div class="mc-sub2">Q4 peak 75.0% · Bench &gt;55%</div><div class="mc-bar" style="background:var(--green)"></div></div>
+    <div class="mc"><div class="mc-dim">Op Margin</div><div class="mc-val tg">60.4%</div><div class="mc-sub">FY2026 full year</div><div class="mc-sub2">Benchmark &gt;30%</div><div class="mc-bar" style="background:var(--green)"></div></div>
+    <div class="mc"><div class="mc-dim">Revenue Growth</div><div class="mc-val tg">+65.5%</div><div class="mc-sub">FY2026 YoY</div><div class="mc-sub2">$130.5B → $215.9B</div><div class="mc-bar" style="background:var(--green)"></div></div>
+    <div class="mc"><div class="mc-dim">Debt / EBITDA</div><div class="mc-val tg">0.06x</div><div class="mc-sub">Near-zero leverage</div><div class="mc-sub2">LT Debt: $8.5B</div><div class="mc-bar" style="background:var(--green)"></div></div>
+  </div>
+  <div class="ch reveal">
+    <div class="chl">Quarterly Revenue, Gross Profit &amp; Operating Income — FY2026 (Verified from source filings, $B)</div>
+    <div style="position:relative;height:270px;"><canvas id="revChart"></canvas></div>
+  </div>
+  <div class="g2 reveal" style="margin:17px 0 28px;">
+    <div class="card">
+      <div class="ct">Quarterly Margin Expansion — FY2026</div>
+      <div class="mr"><span class="l">Q1 FY26 (Apr '25) · Blackwell ramp</span><span class="v ty">60.5% GM</span></div>
+      <div class="mr"><span class="l">Q2 FY26 (Jul '25)</span><span class="v">72.4% GM</span></div>
+      <div class="mr"><span class="l">Q3 FY26 (Oct '25)</span><span class="v">73.3% GM</span></div>
+      <div class="mr"><span class="l">Q4 FY26 (Jan '26)</span><span class="v tg">75.0% GM</span></div>
+      <div class="mr"><span class="l">FY2026 Full Year</span><span class="v tg">71.1% GM</span></div>
+      <div class="fn" style="margin-top:11px;">Q1 compressed by Blackwell production ramp. Recovery to 75% by Q4 reflects normalized product mix. Full-year 71.1% is the correct reference figure — not the Q4 peak of 75%.</div>
+    </div>
+    <div class="card">
+      <div class="ct">Balance Sheet &amp; Cash Generation</div>
+      <div class="mr"><span class="l">Total Assets (Jan '26)</span><span class="v">$206.8B</span></div>
+      <div class="mr"><span class="l">Total Equity</span><span class="v">$157.3B</span></div>
+      <div class="mr"><span class="l">Operating Cash Flow (FY)</span><span class="v tg">$102.7B</span></div>
+      <div class="mr"><span class="l">Free Cash Flow (FY)</span><span class="v tg">$96.6B</span></div>
+      <div class="mr"><span class="l">Current Assets</span><span class="v">$125.9B</span></div>
+      <div class="mr"><span class="l">Current Liabilities</span><span class="v">$32.2B</span></div>
+      <div class="mr"><span class="l">DSO (Q4 · elevated mid-yr, stable Q4)</span><span class="v ty">50.8 days</span></div>
+    </div>
+  </div>
+  <div class="reveal" style="margin-bottom:6px;margin-top:20px;"><div class="sh-ey" style="padding:0;margin:0 0 8px;"><span style="display:block;width:14px;height:1px;background:var(--green)"></span>2B · ROIC &amp; Value Creation</div></div>
+  <div class="fn reveal" style="margin:0 0 18px;border-left:2px solid rgba(31,216,138,0.4);background:rgba(31,216,138,0.04);padding:14px 16px;border-radius:0 6px 6px 0;">
+    <strong style="color:var(--text)">ROIC</strong> (Return on Invested Capital) measures how much profit the business generates for every dollar put to work. <strong style="color:var(--text)">ROE</strong> (Return on Equity) measures the same from the shareholder's perspective. <strong style="color:var(--text)">WACC</strong> (Weighted Average Cost of Capital) is the minimum return the business must earn to create value for investors. When ROIC exceeds WACC, the business is compounding wealth. <strong style="color:var(--green)">At 67.5% ROIC vs 11.5% WACC, NVIDIA is compounding at nearly 6x its cost of capital — a level reached by very few companies at this scale.</strong>
+  </div>
+  <div class="sg reveal">
+    <div class="s"><div class="sl">Current ROIC (TTM)</div><div class="sv tg">67.5%</div></div>
+    <div class="s"><div class="sl">5yr Average ROIC</div><div class="sv tg">52.5%</div></div>
+    <div class="s"><div class="sl">Peak ROIC</div><div class="sv">89.4%</div><div class="ss">FY26 Q1 (Apr '25)</div></div>
+    <div class="s"><div class="sl">ROIC Range (5yr)</div><div class="sv" style="font-size:14px">10.7%–89.4%</div></div>
+    <div class="s"><div class="sl">WACC</div><div class="sv">11.5%</div><div class="ss">RF 4.5% + β1.0×ERP6% + 1%</div></div>
+    <div class="s"><div class="sl">ROIC Spread</div><div class="sv tg">+41.0%</div><div class="ss">4,100 bps above WACC</div></div>
+    <div class="s"><div class="sl">Current ROE</div><div class="sv tg">76.3%</div></div>
+    <div class="s"><div class="sl">ROIC / WACC Ratio</div><div class="sv tg">5.87x</div></div>
+  </div>
+  <div class="ch reveal">
+    <div class="chl">ROIC vs ROE vs WACC — Full 17 Quarters FY2022–FY2026 · Source: FY2022–FY2026 10-Ks</div>
+    <div style="position:relative;height:310px;"><canvas id="roicChart"></canvas></div>
+  </div>
+  <div class="flags reveal">
+    <div class="flag fr"><div class="fh r">⚠️ Watch (1)</div><div class="fi">ROIC declining from 89.4% peak — 21.9 ppts over 3 quarters. Still exceptional at 67.5% vs 11.5% WACC.</div></div>
+    <div class="flag fy"><div class="fh y">📊 Context (1)</div><div class="fi">Stability score 0.44 — high variance reflects the AI inflection. Range 10.7%–89.4% over 5yr window.</div></div>
+    <div class="flag fg"><div class="fh g">✅ Strengths (2)</div><div class="fi">52.5% avg ROIC — exceptional tier by any benchmark (threshold &gt;20%)</div><div class="fi">Value creation spread: +41 ppts above WACC · ROIC/WACC ratio: 5.87x</div></div>
+  </div>
+  <div class="reveal" style="margin:16px 0 8px;">
+    <button class="cb" onclick="tog('roic-fy26')"><span class="arr">▶</span> FY2026 Quarterly Detail (Fully Source: FY2026 10-Qs)</button>
+    <div class="cbody" id="roic-fy26">
+      <div class="tw"><table class="t">
+        <thead><tr><th>Period End</th><th>Fiscal</th><th>Op Income</th><th>NOPAT TTM</th><th>Tax Rate</th><th>Assets</th><th>Inv. Capital</th><th>ROIC TTM</th><th>Equity</th><th>ROE TTM</th></tr></thead>
+        <tbody>
+          <tr><td>2025-04-27</td><td>FY26 Q1</td><td>$21.6B</td><td>$78.3B</td><td>14.5%</td><td>$125.3B</td><td>$86.7B</td><td class="tg">89.4%</td><td>$79.5B</td><td>91.6%</td></tr>
+          <tr><td>2025-07-27</td><td>FY26 Q2</td><td>$28.4B</td><td>$85.9B</td><td>14.6%</td><td>$140.7B</td><td>$100.3B</td><td class="tg">78.8%</td><td>$94.5B</td><td>86.5%</td></tr>
+          <tr><td>2025-10-26</td><td>FY26 Q3</td><td>$36.0B</td><td>$94.0B</td><td>14.7%</td><td>$161.1B</td><td>$123.6B</td><td class="tg">76.0%</td><td>$118.9B</td><td>83.4%</td></tr>
+          <tr><td>2026-01-25</td><td>FY26 Q4</td><td>$44.3B</td><td>$110.7B</td><td>15.1%</td><td>$206.8B</td><td>$164.0B</td><td class="tg">67.5%</td><td>$157.3B</td><td>76.3%</td></tr>
+        </tbody>
+      </table></div>
+      <div class="fn">Source: FY2026 10-K and three FY2026 10-Qs. ROIC = NOPAT ÷ Invested Capital where Invested Capital = Total Assets − Current Liabilities. All figures post 10-for-1 stock split (June 2024).</div>
+    </div>
+  </div>
+
+  <hr class="divider" style="margin-top:52px;">
+</div>
+
+<!-- ═══ TRUE OWNERSHIP ═══ -->
+<div class="page" id="ownership">
+  <div class="sh reveal">
+    <div class="sh-ey">True Ownership Costs</div>
+    <h2 class="sh-title">GAAP says $120B.<br>After the true cost of stock-based compensation (SBC),<br><em style="font-style:italic;color:var(--yellow)">owners keep $78B.</em></h2>
+    <p class="sh-desc">SBC creates a gap between what GAAP reports and what shareholders actually receive. The $42B difference is the real cost of equity compensation — buybacks to offset dilution plus RSU tax withholding — and most financial coverage ignores it entirely.</p>
+  </div>
+  <div class="flags reveal">
+    <div class="flag fr"><div class="fh r">🔴 Red Flags (0)</div><div class="fi" style="color:var(--text3);font-style:italic">None identified</div></div>
+    <div class="flag fy"><div class="fh y">⚠️ Watches (2)</div><div class="fi">SBC at 3.0% of revenue — within range but monitor as revenue base matures</div><div class="fi">Owners' earnings 65.3% of GAAP — buyback + RSU tax cost substantially exceeds stated SBC</div></div>
+    <div class="flag fg"><div class="fh g">✅ Strengths (3)</div><div class="fi">Share count declining −1.2% YoY diluted — net buyback program effective</div><div class="fi">Buybacks 6.3x GAAP SBC — substantial capital return relative to dilution cost</div><div class="fi">SBC % of revenue declined from 11% (FY2024) to 3% (FY2026) — improving trend</div></div>
+  </div>
+  <div class="card reveal" style="margin:22px 0;">
+    <div class="ct">Owners' Earnings Waterfall — FY2026 (Source: FY2026 10-K)</div>
+    <div class="mr"><span class="l">GAAP Net Income</span><span class="v">$120.1B</span></div>
+    <div class="mr"><span class="l">+ GAAP SBC (non-cash add-back)</span><span class="v tg">+$6.4B</span></div>
+    <div class="mr"><span class="l">− Gross Buybacks (cash cost)</span><span class="v tr">−$40.4B</span></div>
+    <div class="mr"><span class="l">− RSU Tax Withholding <span class="badge bb">see note</span></span><span class="v tr">−$7.9B</span></div>
+    <div class="mr-tot"><span>= Owners' Earnings</span><span style="color:var(--green);font-family:var(--font-mono)">$78.2B</span></div>
+    <div class="fn" style="margin-top:14px;"><strong>What is RSU Tax Withholding?</strong> When restricted stock units vest, employees owe income tax on the shares received. NVIDIA pays this tax bill in cash on the employee's behalf — a real economic cost of compensation that never appears in the GAAP SBC expense line. At $7.9B for FY2026, it exceeds the entire stated SBC expense of $6.4B. This is why Owners' Earnings are 35% below GAAP net income.</div>
+    <div class="g3" style="margin-top:18px;">
+      <div style="text-align:center;padding:15px;background:var(--surface3);border-radius:8px;"><div class="sl" style="text-align:center">GAAP EPS (TTM)</div><div style="font-size:24px;font-weight:700;margin-top:5px;font-family:var(--font-mono)">$4.90</div><div style="font-size:10px;color:var(--text3);margin-top:4px">Yahoo Finance / market convention</div></div>
+      <div style="text-align:center;padding:15px;background:var(--surface3);border-radius:8px;"><div class="sl" style="text-align:center">Owners' EPS (TTM)</div><div style="font-size:24px;font-weight:700;margin-top:5px;color:var(--yellow);font-family:var(--font-mono)">$3.19</div><div style="font-size:10px;color:var(--text3);margin-top:4px">Full real compensation cost basis</div></div>
+      <div style="text-align:center;padding:15px;background:var(--surface3);border-radius:8px;"><div class="sl" style="text-align:center">Owners' EPS as % of GAAP EPS</div><div style="font-size:24px;font-weight:700;margin-top:5px;color:var(--red);font-family:var(--font-mono)">65.3%</div><div style="font-size:10px;color:var(--text3);margin-top:4px">$42B gap · improving trend</div></div>
+    </div>
+  </div>
+  <div class="g2 reveal" style="margin:17px 0;">
+    <div class="ch" style="margin:0;"><div class="chl">SBC % of Revenue — Quarterly Trend (11% → 3% over 8 quarters)</div><div style="position:relative;height:250px;"><canvas id="sbcChart"></canvas></div></div>
+    <div class="card">
+      <div class="ct">Share Count &amp; Dilution</div>
+      <div class="mr"><span class="l">Shares Jan 2026 (basic)</span><span class="v">24,304M</span></div>
+      <div class="mr"><span class="l">Shares Jan 2025 (basic)</span><span class="v">24,477M</span></div>
+      <div class="mr"><span class="l">Net Change YoY</span><span class="v tg">−173M (−0.7%)</span></div>
+      <div class="mr"><span class="l">Diluted Shares YoY</span><span class="v tg">−1.2%</span></div>
+      <div class="mr"><span class="l">Gross SBC Dilution</span><span class="v">+0.64%</span></div>
+      <div class="mr"><span class="l">Gross Buybacks (FY)</span><span class="v tg">$40.4B</span></div>
+      <div class="mr"><span class="l">Buyback / GAAP SBC</span><span class="v tg">6.3x</span></div>
+      <div class="mr"><span class="l">Net Share Count Trend</span><span class="v"><span class="badge bg">Shrinking</span></span></div>
+      <div class="fn" style="margin-top:11px;">Post 10-for-1 stock split (June 2024). Unlike most high-growth tech peers where buybacks barely offset SBC dilution, NVIDIA is generating meaningful net share count reduction.</div>
+    </div>
+  </div>
+  <div class="reveal">
+    <button class="cb" onclick="tog('sbc-t')"><span class="arr">▶</span> Quarterly SBC Detail (Source: FY2026 10-Qs)</button>
+    <div class="cbody" id="sbc-t">
+      <div class="tw"><table class="t">
+        <thead><tr><th>Period End</th><th>Fiscal</th><th>SBC (Qtr)</th><th>SBC TTM</th><th>Revenue TTM</th><th>SBC % Rev TTM</th><th>Buybacks</th><th>Op Cash Flow</th></tr></thead>
+        <tbody>
+          <tr><td>2026-01-25</td><td>FY26 Q4</td><td>$1.63B</td><td>$6.39B</td><td>$215.9B</td><td class="tg">3.0%</td><td>$40.4B</td><td>$102.7B</td></tr>
+          <tr><td>2025-10-26</td><td>FY26 Q3</td><td>$1.65B</td><td>$6.1B</td><td>$147.8B</td><td class="tg">4.1%</td><td>$36.7B</td><td>$66.5B</td></tr>
+          <tr><td>2025-07-27</td><td>FY26 Q2</td><td>$1.63B</td><td>$5.9B</td><td>$90.8B</td><td class="ty">6.5%</td><td>$24.2B</td><td>$42.8B</td></tr>
+          <tr><td>2025-04-27</td><td>FY26 Q1</td><td>$1.47B</td><td>$5.5B</td><td>$44.1B</td><td class="ty">12.5%*</td><td>$14.5B</td><td>$27.4B</td></tr>
+        </tbody>
+      </table></div>
+      <div class="fn">*Q1 FY26 TTM SBC% elevated because the TTM revenue denominator includes lower FY25 quarters — not comparable to later quarters on the same basis. The declining trend is best read from Q4 backward. All SBC from cash flow statements. Buybacks from equity statements.</div>
+    </div>
+  </div>
+  <hr class="divider" style="margin-top:56px;">
+</div>
+
+<!-- ═══ EXPECTED RETURNS ═══ -->
+<div class="page" id="returns">
+  <div class="sh reveal">
+    <div class="sh-ey">Expected Returns</div>
+    <h2 class="sh-title">The business earns it.<br>The valuation <em style="font-style:italic;color:var(--red)">takes it back.</em></h2>
+    <p class="sh-desc">Five return components, all on Owners' Earnings basis, all from verified filings. The dominant positive is what the business fundamentally generates. The dominant drag is what you pay for the privilege of owning it at today's price.</p>
+  </div>
+  <div class="g2 reveal" style="margin-bottom:18px;">
+    <div style="background:linear-gradient(135deg,var(--surface2),var(--surface3));border:1px solid rgba(245,200,66,0.2);border-radius:10px;padding:32px;text-align:center;">
+      <div class="sl" style="text-align:center;margin-bottom:7px">Expected Annual Return · Current Price $200 · May 2026</div>
+      <div style="font-size:62px;font-weight:700;color:var(--green);line-height:1;font-family:var(--font-mono)">+14.70%</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">Owners' P/E 62.7x → 20x over 5yr · drag −20.43% · Business growth +34.41%</div>
+    </div>
+    <div style="background:linear-gradient(135deg,var(--surface2),var(--surface3));border:1px solid var(--border2);border-radius:10px;padding:32px;">
+      <div class="sl" style="margin-bottom:10px">What is the 34% business growth?</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.75;">
+        <p style="margin-bottom:10px">Not a revenue forecast — NVIDIA recently grew at 65%, which reflected a demand surge. The 34% is what the business can <em>sustainably compound</em> from its own internal engine:</p>
+        <p style="font-family:var(--font-mono);font-size:13px;color:var(--green);font-weight:700;margin-bottom:10px">ROIC (52.5% avg) × Reinvestment Rate (65.6%) = 34.41%</p>
+        <p style="font-size:12px;color:var(--text3)">This is independent of market conditions — if the business keeps operating at its average efficiency, it compounds at 34% annually from its own engine alone.</p>
+      </div>
+    </div>
+  </div>
+  <div class="g2 reveal">
+    <div class="card">
+      <div class="ct">Component Breakdown — Current Price $200 · May 2026</div>
+      <div class="crow"><div class="cname">Business Growth <span class="badge bb">ROIC×reinvest</span></div><div class="ctrack"><div class="cfill" style="width:100%;background:var(--green)"></div></div><div class="cval tg">+34.41%</div></div>
+      <div class="crow"><div class="cname">Dividend Yield</div><div class="ctrack"><div class="cfill" style="width:0.06%;background:var(--green)"></div></div><div class="cval tg">+0.02%</div></div>
+      <div class="crow"><div class="cname">Net Buyback Yield</div><div class="ctrack"><div class="cfill" style="width:2.3%;background:var(--green)"></div></div><div class="cval tg">+0.78%</div></div>
+      <div class="crow"><div class="cname">P/E Reversion <span class="badge br">55.7x→20x</span></div><div class="ctrack"><div class="cfill" style="width:100%;background:var(--red)"></div></div><div class="cval tr">−18.54%</div></div>
+      <div class="crow"><div class="cname">SBC Drag</div><div class="ctrack"><div class="cfill" style="width:0%;background:var(--green)"></div></div><div class="cval" style="color:var(--text2)">0.00%</div></div>
+      <div class="mr-tot"><span>Total Expected Return</span><span style="color:var(--green);font-family:var(--font-mono)">+14.70%</span></div>
+    </div>
+    <div class="ch" style="margin:0;"><div class="chl">Return Component Waterfall</div><div style="position:relative;height:290px;"><canvas id="waterfallChart"></canvas></div></div>
+  </div>
+  <div class="fn reveal" style="margin:16px 0;border-left:2px solid rgba(59,158,255,0.4);padding:12px 16px;background:rgba(59,158,255,0.04);border-radius:0 6px 6px 0;">
+    <strong style="color:var(--text)">P/E note:</strong> Yahoo Finance shows NVIDIA at 40.8x (GAAP EPS $4.90). Our return model uses 62.7x (Owners' EPS $3.19 · current price $200). The difference is the $42B real compensation cost that GAAP doesn't capture — buybacks and RSU tax withholding paid on employees' behalf. We use the complete picture throughout for internal consistency.
+  </div>
+  <hr class="divider" style="margin-top:56px;">
+</div>
+
+<!-- ═══ THE PRICE ═══ -->
+<div class="page" id="price">
+  <div class="sh reveal">
+    <div class="sh-ey">Valuation &amp; Entry Points</div>
+    <h2 class="sh-title">Already bigger than Japan's economy.<br>Already bigger than Germany's economy.<br><em style="font-style:italic;color:var(--red)">The next stop is China's.</em></h2>
+    <p class="sh-desc">At $200, NVIDIA's $4.90T market cap exceeds both Japan ($4.3T) and Germany ($4.6T) — the world's third and fourth largest economies. The valuation question is not where NVIDIA is today. It is what it needs to <em>become</em> to grow from here.</p>
+  </div>
+  
+
+  <!-- PRICE SPECTRUM -->
+  
+
+  <!-- MARKET PARADOX -->
+  <div class="cd reveal" style="margin:0 0 22px;border-color:rgba(157,111,255,0.3);background:rgba(157,111,255,0.04);">
+    <div class="cd-icon">🔮</div>
+    <div class="cd-text" style="font-size:13px;">
+      <strong style="color:var(--text)">The Market Paradox:</strong> Reverse-engineering the DCF from today's $200 price implies the market expects only <strong style="color:var(--purple)">~10% perpetual growth</strong> — dramatically below NVIDIA's 5-year historical average of 87.6%. Either the market is being disciplined about long-run mean reversion, or it is pricing certainty and scarcity rather than growth expectations. The comparable analysis above shows what the fundamentals say under each assumption. Both interpretations are defensible.
+    </div>
+  </div>
+
+  <!-- ONE QUESTION -->
+  <div class="oq reveal">
+    <div class="oq-label">The Central Valuation Question</div>
+    <div class="oq-q">Is NVIDIA a hardware company<br>or an infrastructure platform?</div>
+    <div style="font-size:14px;color:var(--text2);line-height:1.7;max-width:700px;margin:0 auto 20px">At 40% Stage 1 growth for 5 years, the break-even terminal rate is approximately 9–10%. Below that: overvalued at $200. Above that: fairly valued or undervalued. That single threshold is the entire debate — and it is determined by whether inference stays on NVIDIA or migrates to ASICs.</div>
+    <div class="oq-split">
+      <div class="oq-side" style="background:rgba(240,73,90,0.06);border:1px solid rgba(240,73,90,0.2)">
+        <div class="oq-side-label" style="color:var(--red)">🔴 Bear Lens — Hardware</div>
+        <div class="oq-side-text">GPUs are chips. Chips commoditize. Inference shifts to custom ASICs. Terminal growth rate: 3–5%. At that rate, even 40%+ Stage 1 growth leaves the stock overvalued at $200. The business is excellent. The price assumes something hardware economics cannot sustain.</div>
+      </div>
+      <div class="oq-side" style="background:rgba(31,216,138,0.05);border:1px solid rgba(31,216,138,0.18)">
+        <div class="oq-side-label" style="color:var(--green)">🟢 Bull Lens — Platform</div>
+        <div class="oq-side-text">CUDA is an ecosystem, not a chip. 15 years of developer lock-in. Hyperscalers are committed to next-gen NVIDIA GPUs. Terminal growth rate: 10–15%. At that rate, $200 is roughly fairly valued — and the AI infrastructure buildout has decades to run.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARABLE HYPERGROWTH -->
+  <div class="card reveal" style="margin:20px 0;">
+    <div class="fn" style="margin-bottom:14px">Stage 1 anchored to what Microsoft and Google actually delivered during their hypergrowth phases — not arbitrary rates. The terminal rate assumption matters far more than Stage 1 growth.</div>
+    <div class="tw"><table class="t">
+      <thead><tr><th style="text-align:left">Scenario</th><th>Stage 1 (5yr)</th><th>Terminal Rate</th><th>NVDA Fair Value / Share</th><th>vs Today ($200)</th><th>Interpretation</th></tr></thead>
+      <tbody>
+        <tr><td>MSFT Conservative · hardware</td><td>30%</td><td class="tr">3%</td><td>$109</td><td class="tr">−45%</td><td style="font-size:11px;color:var(--text3)">Platform fades to commodity</td></tr>
+        <tr style="background:rgba(31,216,138,0.03)"><td>MSFT Conservative · platform</td><td>30%</td><td class="tg">12%</td><td class="tg">~$230</td><td class="tg">+15%</td><td style="font-size:11px;color:var(--text3)">MSFT-comparable long-run moat ✓</td></tr>
+        <tr><td>Google Conservative · hardware</td><td>40%</td><td class="tr">3%</td><td>$154</td><td class="tr">−23%</td><td style="font-size:11px;color:var(--text3)">Strong growth, no durability premium</td></tr>
+        <tr style="background:rgba(31,216,138,0.03)"><td>Google Conservative · platform</td><td>40%</td><td class="tg">15%</td><td class="tg">~$380</td><td class="tg">+90%</td><td style="font-size:11px;color:var(--text3)">Google-comparable infrastructure moat</td></tr>
+        <tr><td>Google Peak · hardware</td><td>50%</td><td class="tr">3%</td><td>$213</td><td class="ty">+6%</td><td style="font-size:11px;color:var(--text3)">Best-ever growth, barely justified at $200</td></tr>
+        <tr style="background:rgba(31,216,138,0.03)"><td>Google Peak · platform</td><td>50%</td><td class="tg">15%</td><td class="tg">~$550</td><td class="tg">+175%</td><td style="font-size:11px;color:var(--text3)">Exceptional outcome — very high bar</td></tr>
+      </tbody>
+    </table></div>
+    <div class="fn" style="margin-top:12px"><strong>Key insight:</strong> Microsoft and Google never normalized to 3% GDP growth after their hypergrowth phases. MSFT settled at ~12% long-run. Google never fell below ~15-20%. If NVIDIA's CUDA ecosystem creates comparable platform durability, the current price is defensible or undervalued. If the AI hardware cycle fades like prior semiconductor cycles, it is not. Note: terminal rates above 11.5% WACC produce infinite values in this model — those scenarios require a three-stage model.</div>
+  </div>
+
+  <!-- TERMINAL RATE SENSITIVITY -->
+  
+
+  <!-- GDP ANCHOR TABLE -->
+  <div class="card reveal" style="margin-bottom:22px;">
+    <div class="ct">GDP Anchor Analysis — What NVIDIA Needs to Become</div>
+    <div class="fn" style="margin-bottom:18px;font-size:12px;line-height:1.75;color:var(--text2)">
+      <strong style="color:var(--text)">How to read this table:</strong> Each row starts with a stock price. At that price, NVIDIA's market cap would equal the country GDP shown. The growth column answers: what annual growth rate would justify that price at a 20x exit in 5 years?<br><br>
+      The <strong style="color:var(--text)">20x exit multiple</strong> is the P/E ratio assumed at the end of Year 5 — the semiconductor sector's long-run historical average. It is not a terminal growth rate — it is the valuation multiple a buyer would pay for NVIDIA at exit. The <strong style="color:var(--text)">vs Today ($200)</strong> column shows whether that price is above or below the current price. <strong style="color:var(--yellow)">The highlighted row is today — NVIDIA already exceeds both Japan ($4.3T) and Germany ($4.6T).</strong>
+    </div>
+    
+    <div class="tw" style="margin-top:20px;"><table class="t">
+      <thead><tr><th>Price/Share</th><th>Market Cap</th><th>= Country GDP (2026)</th><th>vs Today ($200)</th><th>Growth Needed @20x · 5yr</th><th>What It Means</th></tr></thead>
+      <tbody>
+        <tr><td class="tg">$73.43</td><td>$1.8T</td><td>South Korea / Australia</td><td class="tr">−63.3%</td><td>2.8% / yr</td><td style="font-size:11px;color:var(--text3)">Priced for near-zero growth</td></tr>
+        <tr><td class="tg">$93.82</td><td>$2.3T</td><td>Brazil / Canada</td><td class="tr">−53.1%</td><td>8.0% / yr</td><td style="font-size:11px;color:var(--text3)">Modest growth assumption</td></tr>
+        <tr><td class="tg">$130.54</td><td>$3.2T</td><td>France</td><td class="tr">−34.7%</td><td>15.3% / yr</td><td style="font-size:11px;color:var(--text3)">Solid growth required</td></tr>
+        <tr><td class="tg">$142.78</td><td>$3.5T</td><td>United Kingdom</td><td class="tr">−28.6%</td><td>17.4% / yr</td><td style="font-size:11px;color:var(--text3)">Strong growth required</td></tr>
+        <tr><td class="ty">$159.09</td><td>$3.9T</td><td>India</td><td class="tr">−20.5%</td><td>20.0% / yr</td><td style="font-size:11px;color:var(--text3)">Very strong growth</td></tr>
+        <tr><td class="ty">$175.41</td><td>$4.3T</td><td>Japan</td><td class="tr">−12.3%</td><td>22.4% / yr</td><td style="font-size:11px;color:var(--text3)">Aggressive growth</td></tr>
+        <tr><td class="ty">$187.65</td><td>$4.6T</td><td>Germany</td><td class="tr">−6.2%</td><td>24.0% / yr</td><td style="font-size:11px;color:var(--text3)">Very aggressive</td></tr>
+        <tr style="background:rgba(245,200,66,0.06);font-weight:600;border:1px solid rgba(245,200,66,0.3)"><td class="ty">$200.00 ◄</td><td>$4.90T</td><td style="color:var(--yellow)">Bigger than Japan &amp; Germany</td><td style="color:var(--text2)">—</td><td class="ty">26.8% / yr</td><td style="font-size:11px;color:var(--yellow)">Just to hold today's value</td></tr>
+        <tr><td class="tr">$754.67</td><td>$18.5T</td><td>China</td><td class="tg">+277%</td><td>63.8% / yr</td><td style="font-size:11px;color:var(--text3)">Unprecedented at scale</td></tr>
+        <tr><td class="tr">$1,183.00</td><td>$29.0T</td><td>United States</td><td class="tg">+492%</td><td>79.2% / yr</td><td style="font-size:11px;color:var(--text3)">Beyond modeling range</td></tr>
+      </tbody>
+    </table></div>
+    <div class="fn" style="margin-top:14px"><strong>Semiconductor market context:</strong> Global semiconductor revenue in 2025 was approximately $650B. At 40% Stage 1 growth, implied Year 5 revenue ($1.16T) would exceed the entire current global semiconductor market. At 50%, implied revenue ($1.64T) would be 2.5x the entire market. This assumes massive market expansion driven by AI infrastructure — which may happen, but is the specific bet embedded in today's price.</div>
+  </div>
+
+  <!-- REFERENCE LEVELS -->
+
+  <hr class="divider" style="margin-top:56px;">
+</div>
+
+<!-- ═══ RISK LANDSCAPE ═══ -->
+<div class="page" id="risk">
+  <div class="sh reveal">
+    <div class="sh-ey">Risk Landscape</div>
+    <h2 class="sh-title">Google reported +63% Cloud growth.<br>NVIDIA fell on <em style="font-style:italic;color:var(--red)">competition fears.</em></h2>
+    <p class="sh-desc">That single data point captures the disconnect between the competitive narrative and the competitive reality. Four layers of analysis using Alphabet Q1 2026 earnings and DeepSeek V4 technical data.</p>
+  </div>
+
+  <!-- TIPPING POINT FRAMEWORK -->
+  <div class="reveal" style="margin-bottom:8px;">
+    <p style="font-size:14px;color:var(--text2);line-height:1.75;max-width:780px;">The risk to NVIDIA is not binary. It is a sliding scale — from near-zero threat today on training, to a real watch item on inference efficiency, to a long-run structural question the data cannot yet answer. Four tipping points define the arc.</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:3px;margin:20px 0 28px;" class="reveal">
+
+    <!-- TP1 -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-left:4px solid var(--green);padding:22px 26px;border-radius:0 8px 8px 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:14px;">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:6px;">Tipping Point 1 · We Are Here Today</div>
+          <div style="font-family:var(--font-display);font-size:20px;color:var(--text);">Inference at ~10–20% TPU/ASIC Share</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-bottom:4px;">Moat Status</div>
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--green);">Intact but Narrowing</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">What Happens</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">Hyperscalers start routing commodity inference (simple queries, standard models) to their own ASICs while keeping complex frontier inference on NVIDIA. Training revenue is completely unaffected.</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Impact on NVIDIA</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">Pricing power softens on the commodity inference slice. ROIC compression modest — estimated 5–10% on the affected revenue segment. Data center growth continues.</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Evidence Today</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">Google Ironwood designed for inference at scale. Google Cloud backlog $460B+ and doubling — Jevons paradox offsetting efficiency gains. Demand accelerating despite efficiency improvements.</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">Implied Fair Value Range at Tipping Point</div>
+          <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--green);">$161 – $264 <span style="font-size:12px;color:var(--text3);font-weight:400;">vs $200 today: −20% to +32%</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);max-width:340px;font-style:italic;">Growth path: 65%/yr × 2yr (anchored to NVIDIA Q1 FY2027 guidance +77% YoY) · OE at tipping point: ~$213B · Bull: 8.5% terminal · Bear: 6.5% terminal.</div>
+      </div>
+    </div>
+
+    <!-- TP2 -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-left:4px solid var(--yellow);padding:22px 26px;border-radius:0 8px 8px 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:14px;">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--yellow);margin-bottom:6px;">Tipping Point 2 · 3–5 Years Out · Possible</div>
+          <div style="font-family:var(--font-display);font-size:20px;color:var(--text);">Inference at 35–40% TPU/ASIC Share</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-bottom:4px;">Moat Status</div>
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--yellow);">Training Holds · Inference Broken</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">What Happens</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">Hyperscalers have optimized enough that NVIDIA becomes premium optional rather than default for inference. Google's Ironwood running Gemini internally at scale is the proof of concept already in progress.</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Impact on NVIDIA</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">Data center revenue growth decelerates — not collapses. ROIC compresses from current 67.5% toward 40–45%. This is the scenario where the terminal rate drops below the 9–10% break-even threshold.</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">The Signal to Watch</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">Hyperscaler CapEx mix shifts — NVIDIA order volumes plateau while TPU/ASIC internal capacity announcements accelerate. May 20 earnings: any softness in data center guidance would be an early read.</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">Implied Fair Value Range at Tipping Point</div>
+          <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--yellow);">$123 – $167 <span style="font-size:12px;color:var(--text3);font-weight:400;">vs $200 today: −38% to −16%</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);max-width:340px;font-style:italic;">Growth path: 35%/yr × 4yr (analyst consensus FY2028-2030 sustained 30%+) · OE at tipping point: ~$260B · Bull: 6.5% terminal · Bear: 4.5% terminal.</div>
+      </div>
+    </div>
+
+    <!-- TP3 -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-left:4px solid var(--orange);padding:22px 26px;border-radius:0 8px 8px 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:14px;">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;">Tipping Point 3 · 5–10 Years Out · Uncertain</div>
+          <div style="font-family:var(--font-display);font-size:20px;color:var(--text);">TPUs Credibly Threaten Training</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-bottom:4px;">Moat Status</div>
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--orange);">Breaking</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">What Has to Happen</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">TPU software stack matures to match CUDA. JAX/XLA becomes as developer-friendly as CUDA. Model architectures shift away from transformer-centric designs that TPUs are currently optimized for.</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">The Google Question</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">Ironwood is explicitly inference-only. But TPU v8, v9 could be different. The roadmap question matters more than the current product. If Google announces training-capable TPUs matching H100 performance, this timeline accelerates.</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">The Tell</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;"><strong style="color:var(--text);">If Google trains Gemini 4 or 5 on TPUs instead of NVIDIA — that is the signal.</strong> Not inference. Training. That single event would trigger every hyperscaler to re-evaluate their NVIDIA dependency.</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">Implied Fair Value Range at Tipping Point</div>
+          <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--orange);">$104 – $124 <span style="font-size:12px;color:var(--text3);font-weight:400;">vs $200 today: −48% to −38%</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);max-width:340px;font-style:italic;">Growth path: 35% × 2yr → 20% × 3yr → 12% × 2yr (step-down reflecting gradual deceleration) · OE at tipping point: ~$309B · Bull: 4.5% terminal · Bear: 2.5% terminal.</div>
+      </div>
+    </div>
+
+    <!-- TP4 -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-left:4px solid var(--red);padding:22px 26px;border-radius:0 8px 8px 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:14px;">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--red);margin-bottom:6px;">Tipping Point 4 · 10+ Years Out · Low Near-Term Probability</div>
+          <div style="font-family:var(--font-display);font-size:20px;color:var(--text);">CUDA Loses Developer Gravity</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-bottom:4px;">Moat Status</div>
+          <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--red);">Breaking Down</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">What Has to Happen</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">A generation of AI researchers trains on non-CUDA infrastructure from the start. This is generational change — requires university labs, startups, and research institutions to default to something else for long enough that CUDA muscle memory fades.</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Why It's Hard</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">~97% of AI research papers use CUDA-based infrastructure today. PyTorch, the dominant research framework, is CUDA-native. Every PhD student learning deep learning learns CUDA first. That installed base is 15 years deep.</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">The Parallel</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6;">Intel's x86 dominated computing for 30 years before ARM made serious inroads — and only in mobile first, not data center. CUDA's developer gravity is the deepest moat NVIDIA has. It is also the slowest to break.</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:10px;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;">Implied Fair Value Range at Tipping Point</div>
+          <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--red);">$120 – $130 <span style="font-size:12px;color:var(--text3);font-weight:400;">vs $200 today: −40% to −35%</span></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);max-width:340px;font-style:italic;">Growth path: 35% × 2yr → 20% × 3yr → 12% × 4yr → 8% × 3yr (full maturity step-down) · OE at tipping point: ~$488B · Bull: 3.0% terminal · Bear: 1.5% terminal.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CURRENT STATE SUMMARY -->
+  <div class="fn reveal" style="margin:0 0 24px;border-left:2px solid var(--border2);padding:14px 16px;">
+    <strong style="color:var(--text)">Where we are today:</strong> NVIDIA holds near-monopoly on large model training. Ironwood is inference-only by Google's own description. DeepSeek returned to NVIDIA after a failed Huawei training attempt. The first tipping point is the only one with near-term evidence — and the Jevons paradox data (Gemini API usage up 60% QoQ despite efficiency gains) suggests demand is growing faster than efficiency is compressing it. Tipping Points 2–4 are real risks on a 3–10 year horizon, not today's story.
+    <br><br>
+    <strong style="color:var(--text)">The most counterintuitive finding:</strong> Even in the most pessimistic long-run scenarios, NVIDIA is not a zero. At Tipping Point 4 — after 12 years of growth followed by full CUDA commoditization — the fair value floor is still $120–$130. The compounded earnings base does the heavy lifting. The question is not whether NVIDIA has intrinsic value. It clearly does. The question is whether $200 today gives you access to that value — or whether the price has already consumed it.
+  </div>
+
+
+
+
+
+  <!-- MAY 20 -->
+
+  <hr class="divider" style="margin-top:56px;">
+</div>
+
+<!-- ═══ FULL PICTURE ═══ -->
+<div class="page" id="summary">
+  <div class="sh reveal">
+    <div class="sh-ey">The Full Picture</div>
+    <h2 class="sh-title">Two lenses.<br>One stock.<br><em style="font-style:italic;color:var(--green)">You decide.</em></h2>
+    <p class="sh-desc">No verdict. The data presented through two analytical lenses — each internally consistent, each defensible. The conclusion is yours to draw.</p>
+  </div>
+  <div class="g2 reveal" style="margin-bottom:22px;">
+    <div style="background:rgba(240,73,90,0.04);border:1px solid rgba(240,73,90,0.2);border-radius:12px;padding:28px;">
+      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--red);margin-bottom:14px">🔴 The Bear Lens</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.8">NVIDIA is a semiconductor company in the middle of an AI infrastructure supercycle. Semiconductors historically commoditize. Inference is shifting toward custom ASICs. Terminal growth reverts to 3–5%. At that rate, even exceptional near-term growth leaves the stock overvalued at $200. The business is world-class. The price assumes it becomes a new category of economic infrastructure that has no historical precedent at this scale.</div>
+    </div>
+    <div style="background:rgba(31,216,138,0.04);border:1px solid rgba(31,216,138,0.2);border-radius:12px;padding:28px;">
+      <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--green);margin-bottom:14px">🟢 The Bull Lens</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.8">NVIDIA is not selling chips — it is selling the only platform that serious AI workloads reliably run on. CUDA is 15 years of developer lock-in. Hyperscalers are publicly committed to next-generation NVIDIA hardware. Terminal growth of 10–15% is reasonable for infrastructure as essential as cloud. At that rate, $200 is roughly fairly valued — and the AI buildout has decades to run.</div>
+    </div>
+  </div>
+  <div class="sum-card reveal">
+    <div class="sum-text">
+      <strong>NVIDIA is an exceptional business trading at an exceptional price.</strong> That single sentence contains the entire tension. The business quality is not in question — ROIC of 67.5% against an 11.5% cost of capital, FCF margin of 44.6%, gross margins that expanded from 60.5% to 75.0% across FY2026, and a share count that is net declining despite $6.4B in annual stock compensation. The ROIC spread of 41 percentage points above WACC places NVIDIA in a category occupied by very few companies at any scale.
+      <br><br>
+      <strong>The compensation picture is cleaner than the headline numbers suggest.</strong> GAAP reports $120B in profit. After accounting for the full real cost of compensating employees — $40.4B in buybacks to offset dilution, $7.9B in RSU tax withholding — owners actually keep $78B. That gap is not fraud. It is the honest cost of running a talent-intensive platform company. And the trend is improving — SBC has fallen from 11% of revenue to 3% over two years.
+      <br><br>
+      <strong>The return model projects +14.70% annually at the current price of $200.</strong> The dominant positive is a 34.4% sustainable growth engine derived from ROIC × reinvestment rate — not a revenue forecast, but what the business can compound from its own internal engine. The dominant drag is a 20.4% annual P/E reversion from the current Owners' P/E of 62.7x toward the semiconductor historical median of 20x. At today's $200, expected return compresses to approximately +14.70%.
+      <br><br>
+      <strong>The valuation is where the two lenses diverge completely.</strong> At $200, NVIDIA's $4.90T market cap is already bigger than Japan's economy and Germany's economy. To simply hold that value at a 20x exit in 5 years requires 26.8% annual growth — that is break-even, not upside. The hardware vs platform comparable analysis shows that Microsoft-level platform durability justifies the current price with room to spare, while hardware-level terminal assumptions do not regardless of near-term growth.
+      <br><br>
+      <strong>The tipping point framework is the most important analytical output in this dashboard.</strong> The risk to NVIDIA is not binary — it is a sliding scale from intact-but-narrowing today, to training-holds-inference-broken at TP2, to structurally breaking at TP3. What makes NVIDIA different from Cisco in 2000 is the depth of the CUDA software ecosystem — 15 years of developer lock-in that hardware alone cannot replicate. What makes it similar to Cisco is that the infrastructure supercycle narrative has been wrong before. The tell is simple: if Google trains Gemini 4 or 5 on TPUs instead of NVIDIA, the thesis changes. Until that happens, the moat is intact.
+      <br><br>
+      <strong>The question is not whether NVIDIA has intrinsic value.</strong> It clearly does — even at Tipping Point 4 after 12 years of growth followed by full CUDA commoditization, the fair value floor is $120–$130. The compounded earnings base survives every scenario we can model. The question is whether $200 today gives you access to that value, or whether the price has already consumed it and then some.
+    </div>
+  </div>
+  <div class="card reveal" style="margin-bottom:26px;">
+    <div class="ct">Three Things to Watch — May 20, 2026</div>
+    <div class="g3">
+      <div style="padding:18px;background:var(--surface3);border-radius:8px;border-top:2px solid var(--green)">
+        <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);margin-bottom:10px">Bull confirmation</div>
+        <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:8px">Data center revenue</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">Q4 FY26 was $47.5B — chips shipped, not construction commitments. Watch whether acceleration reflects genuine workload growth or a hyperscaler build-out cycle approaching completion. Google's $460B cloud backlog doubling QoQ is the bull signal.</div>
+      </div>
+      <div style="padding:18px;background:var(--surface3);border-radius:8px;border-top:2px solid var(--yellow)">
+        <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--yellow);margin-bottom:10px">The margin question</div>
+        <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:8px">Gross margin trajectory</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">FY2026 full-year 71.1%, Q4 hit 75%. Can it hold into the Vera Rubin ramp? Margin sustainability is the clearest test of the platform vs hardware thesis.</div>
+      </div>
+      <div style="padding:18px;background:var(--surface3);border-radius:8px;border-top:2px solid var(--purple)">
+        <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--purple);margin-bottom:10px">The key signal</div>
+        <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:8px">FY27 guidance</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">$280B+ (~30% growth) matches Microsoft's Windows-era hypergrowth rate — where the platform terminal assumption becomes defensible. Below $250B confirms deceleration. This number moves the stock.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER - logo injected by build script -->
+<footer>
+  <div class="fb"><span style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.06);overflow:hidden;flex-shrink:0;"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgr/2wBDAQICAgICAgUDAwUKBwYHCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgr/wAARCAA0ADQDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9IvD/AIRtliUKgGCM8Z71vjR7S3UyFQcKcYB7U60toUQJDMYWZgN4AznOe45zzVqbT57m7juP7SkEYikzEAu1jkYY/LnI579+a5DsKEml+fGkiZ2lQckcdvWuS0nwhrkOipaadr0ySpes7meHzMoZ2JX5jn7pxnJ6D6V6HBbMtkha4JIjHXA7DnpXIfD3WbjXtNN/ZXSPGlzLE4Axh1kYHk/h+VAHQW2mwRR7HXc3Tgf0qvq3he2vYQ4iBOBkbeQa0xZG5cGWRgxHy8Djnk9KLtvIVWlnIwDnkc/pRYDzjVfBdj9sY8LkDgr0ors7yFjOTvHIB5opALq2t6Tp9sTM4T5hkkdCTj1rUuNSsrFDcXVwkUccDPJIw4C8HOfpXjfjX9nODxXp1683jjxNC1xBbrH/AMTyTbE0bZD4J5yCBj0FW/FH7Ilrr2iyWdn8XfF9sZU8p5h4gdv3JcBo/mByDFujz1wc9RmqFqdd44+OHgbwh4VbXNU1OGNY9NN0x3AZhEkSMw9v3qc/7QrwL/gnh+0N4Z8afCTVtb1vVrZHt/E95E4LgFfMvZI48fVuPwrl/iR/wTcfxX8OZ9K1P4v+K5Lr7E9s2NTbYbNXmCW/+6UjsQT1Jt855rwf/gmf/wAE9JtZ8F6xrfjz4ja5Hbw65fW0+nR3zKkjRsLi3kOOdyXE0sme7YzkDFPQluV9j9Po/FGiDxBJohv4jPFZGd0yMogfZn6Zrlvih470rwro767c6hAIMNGHbHzY6j6gg/5FeDeDP2E9S1DW5PFGv/HrxjNPOZ4J3t9bZDLBG7GFSV6fvEic4wTgjoxzY+OX7Btr4q8OReFdH+Ifis2cUomFrN4kldSwOcgk5BJ789TxzU6FXZ77pPiuLWdOhv7K4j2PEpGcDqoPf60V5Z4V+DHivQNHj0pdV1SGGFVS2h/tsuUjVFUAkg88HuaKLDPdYzBc6ftZVwqrg4HtmrouUihaCR1ACHoowa5LQ/Etvd2CujrgMu5SOnNbou7a7UjzB930680JgOvdkmn+UpRwyYUsBXl37OfgPS/Dmh39rauNsmrXTy7CNrMZSCevsK7zXbxbS381VziArtHccH8+K5P4O+JbK50hnFlc2oN3cYS6g8t3Pmt84HXBxwf8aAO5tdOs9HjWDTIQil2xscBUySfX/wDWTTzLC7qxO4KCWy3JPr7Un26KYnLLg/hzk+1Z97cW1vM832lkMiqNok4GPQY6nPJ+lADbi6s3mZwQAcEAN0GBRXOXN9a2Uxg+2StgDJaY+mP6UUAcr4Q1e+VY183PTrXX2GuX63ojLqQR3FFFIC/ezveRIk3RuDjis+ztLa2YiKEDa7Y/EmiihbgO1zU7u1tDLC4B2cA9KzX1G5MAmyN2w84oooYHIa3qF0b4nzD90dzRRRQB/9k=" style="width:44px;height:44px;object-fit:cover;opacity:0.85;" alt="SO"></span>Signals Only</div>
+  <div class="fm">
+    NVDA · Full Investment Analysis · FY2026 10-K filed February 25, 2026<br>
+    Quarterly data verified: 10-K (Feb 2026) + 10-Qs (May, Aug, Nov 2025) · FY2022–FY2023 anchors sourced from source 10-K filings<br>
+    All figures post 10-for-1 stock split (June 2024) · P/E calculated from filing EPS · No third-party data sources<br>
+    Competitive analysis: Alphabet Q1 2026 Earnings (Apr 29, 2026) · DeepSeek V4 Technical Paper (Apr 24, 2026)<br>
+    Analysis date: February 28, 2026 · Price updated: May 2, 2026
+  </div>
+  <div class="fd">
+    For informational purposes only. This dashboard presents financial data and quantitative analysis derived from publicly available company filings and earnings materials. It does not constitute investment advice, a recommendation to buy or sell any security, or a solicitation of any kind. All fundamental data reflects filings available as of February 2026. Current price data is for reference only. Past financial performance does not guarantee future results. Readers should conduct their own independent research and consult qualified financial advisors before making any investment decisions.
+  </div>
+</footer>
+
+<script>
+function tog(id){const e=document.getElementById(id);const b=e.previousElementSibling;e.classList.toggle('open');b.classList.toggle('open');}
+
+const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible');});},{threshold:0.07,rootMargin:'0px 0px -28px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+const secs=['paradox','business','ownership','returns','price','risk','summary'];
+const nls=document.querySelectorAll('.nav-link');
+window.addEventListener('scroll',()=>{
+  let c='';secs.forEach(id=>{const el=document.getElementById(id);if(el&&window.scrollY>=el.offsetTop-110)c=id;});
+  nls.forEach(a=>{a.classList.remove('active');if(a.getAttribute('href')==='#'+c)a.classList.add('active');});
+});
+
+Chart.defaults.color='#7d90a8';
+Chart.defaults.borderColor='rgba(255,255,255,0.05)';
+Chart.defaults.font.family="'JetBrains Mono',monospace";
+Chart.defaults.font.size=10;
+
+// PARADOX CHART - fixed dual axis with aligned zero lines
+new Chart(document.getElementById('paradoxChart'),{
+  type:'bar',
+  data:{
+    labels:['FY2022','FY2023','FY2024','FY2025','FY2026'],
+    datasets:[
+      {label:'ROIC %',data:[26,11,11,84,68],
+        backgroundColor:'rgba(31,216,138,0.75)',borderRadius:4,order:2},
+      {label:'Stock Return %',data:[76,-11,200,134,32],
+        backgroundColor:(ctx)=>ctx.raw>=0?'rgba(59,158,255,0.65)':'rgba(240,73,90,0.65)',
+        borderRadius:4,order:1}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,padding:14}},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.raw>=0?'+':'')+c.raw+'%'}}},
+    scales:{
+      y:{min:-30,max:210,grid:{color:'rgba(255,255,255,0.04)'},
+        ticks:{callback:v=>v+'%'}},
+      x:{grid:{display:false}}
+    }
+  }
+});
+
+// REVENUE CHART (verified figures)
+new Chart(document.getElementById('revChart'),{
+  type:'bar',
+  data:{
+    labels:["Q1 FY26\nApr '25","Q2 FY26\nJul '25","Q3 FY26\nOct '25","Q4 FY26\nJan '26"],
+    datasets:[
+      {label:'Revenue',data:[44.1,46.7,57.0,68.1],backgroundColor:'rgba(59,158,255,0.7)',borderRadius:4},
+      {label:'Gross Profit',data:[26.7,33.9,41.8,51.1],backgroundColor:'rgba(31,216,138,0.65)',borderRadius:4},
+      {label:'Operating Income',data:[21.6,28.4,36.0,44.3],backgroundColor:'rgba(157,111,255,0.65)',borderRadius:4}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,padding:13}}},
+    scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>'$'+v+'B'}},x:{grid:{display:false}}}
+  }
+});
+
+// ROIC CHART - full 17 quarters FY2022-FY2026
+new Chart(document.getElementById('roicChart'),{
+  type:'line',
+  data:{
+    labels:['FY22 Q4','FY23 Q1','FY23 Q2','FY23 Q3','FY23 Q4','FY24 Q1','FY24 Q2','FY24 Q3','FY24 Q4','FY25 Q1','FY25 Q2','FY25 Q3','FY25 Q4','FY26 Q1','FY26 Q2','FY26 Q3','FY26 Q4'],
+    datasets:[
+      {label:'ROIC (TTM)',data:[26.0,27.1,24.2,15.2,10.7,11.1,30.1,46.9,60.7,76.7,82.4,87.2,83.2,89.4,78.8,76.0,67.5],
+        borderColor:'#1fd88a',backgroundColor:'rgba(31,216,138,0.06)',fill:true,tension:0.35,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#1fd88a'},
+      {label:'ROE (TTM)',data:[36.6,35.9,32.5,27.9,19.8,19.5,37.5,56.8,69.2,86.7,91.1,95.7,91.9,91.6,86.5,83.4,76.3],
+        borderColor:'#3b9eff',backgroundColor:'transparent',tension:0.35,borderWidth:2,borderDash:[6,3],pointRadius:2,pointBackgroundColor:'#3b9eff'},
+      {label:'WACC 11.5%',data:Array(17).fill(11.5),
+        borderColor:'rgba(240,73,90,0.5)',borderDash:[8,4],borderWidth:1.5,pointRadius:0,fill:false}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,padding:13}}},
+    scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>v+'%'}},
+      x:{grid:{display:false},ticks:{maxRotation:45,maxTicksLimit:10}}}
+  }
+});
+
+// SBC CHART
+new Chart(document.getElementById('sbcChart'),{
+  type:'line',
+  data:{
+    labels:['FY24 Q4','FY25 Q1','FY25 Q2','FY25 Q3','FY25 Q4','FY26 Q1','FY26 Q2','FY26 Q3','FY26 Q4'],
+    datasets:[
+      {label:'SBC % Revenue (TTM)',data:[10.6,11.1,7.6,5.8,5.6,4.3,3.9,3.5,3.0],
+        borderColor:'#f5c842',backgroundColor:'rgba(245,200,66,0.07)',fill:true,tension:0.4,borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#f5c842'},
+      {label:'5% Benchmark',data:Array(9).fill(5),
+        borderColor:'rgba(240,73,90,0.4)',borderDash:[6,3],borderWidth:1.5,pointRadius:0,fill:false}
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,padding:13}}},
+    scales:{y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}
+  }
+});
+
+
+
+// WATERFALL CHART - vertical with short labels
+new Chart(document.getElementById('waterfallChart'),{
+  type:'bar',
+  data:{
+    labels:['Biz Growth','Dividend','Buyback','P/E Rev.','SBC Drag','TOTAL'],
+    datasets:[{
+      data:[34.41,0.02,0.70,-20.43,0.0,14.70],
+      backgroundColor:['#1fd88a','#1fd88a','#1fd88a','#f0495a','rgba(31,216,138,0.3)','#3b9eff'],
+      borderRadius:4,barPercentage:0.6
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>(c.raw>=0?'+':'')+c.raw.toFixed(2)+'%'}}},
+    scales:{
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>v+'%'}},
+      x:{grid:{display:false},ticks:{font:{size:11},maxRotation:0}}
+    }
+  }
+});
+</script>
+
+</html>
